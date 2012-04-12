@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Forms;
 
 // TFS dependencies
-using Microsoft.TeamFoundation.Proxy;
+using Microsoft.TeamFoundation.Framework.Client;
 using Microsoft.TeamFoundation.Server;
 using Microsoft.TeamFoundation.Client;
 
@@ -12,11 +10,11 @@ namespace WorkitemEventSubscriptionTool
 {
     public class TFSInstanceChangedArgs : EventArgs
     {
-        public readonly TeamFoundationServer Server;
+        public readonly TfsTeamProjectCollection Collection;
 
-        public TFSInstanceChangedArgs(TeamFoundationServer tfsInstance)
+        public TFSInstanceChangedArgs(TfsTeamProjectCollection tfsInstance)
         {
-            this.Server = tfsInstance;
+            this.Collection = tfsInstance;
         }
     }
 
@@ -25,7 +23,7 @@ namespace WorkitemEventSubscriptionTool
     static class Shared
     {
 
-        static public TeamFoundationServer Server = null;
+        static public TfsTeamProjectCollection Collection = null;
         static public ICommonStructureService CSSProxy = null;
         static public IEventService EventService = null;
         static public string UserDomain;
@@ -36,15 +34,15 @@ namespace WorkitemEventSubscriptionTool
 
         public static void ConnectServer()
         {
-            if (Shared.Server == null)
+            if (Shared.Collection == null)
             {
                 return;
             }
 
             try
             {
-                Shared.EventService = (IEventService)Shared.Server.GetService(typeof(IEventService));
-                Shared.CSSProxy = (ICommonStructureService)Shared.Server.GetService(typeof(ICommonStructureService));                
+                Shared.EventService = (IEventService)Shared.Collection.GetService(typeof(IEventService));
+                Shared.CSSProxy = (ICommonStructureService)Shared.Collection.GetService(typeof(ICommonStructureService));                
             }
             catch (Exception e)
             {

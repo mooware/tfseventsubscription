@@ -8,10 +8,13 @@ using System.Windows.Forms;
 using WorkitemEventSubscriptionTool;
 using System.Diagnostics;
 
+using System.Net;
+
 using Microsoft.TeamFoundation.Proxy;
 using Microsoft.TeamFoundation.Server;
 using Microsoft.TeamFoundation.Client;
 using Microsoft.TeamFoundation;
+using Microsoft.TeamFoundation.Framework.Client;
 
 namespace SubscriptionManager
 {
@@ -33,24 +36,23 @@ namespace SubscriptionManager
 
         void DisplayServerInfo()
         {
-            Boolean connected = (Shared.Server != null);
+            Boolean connected = (Shared.Collection != null);
             subscribeButton.Enabled = connected;
             unsubscribeButton.Enabled = connected;
             refreshButton.Enabled = connected;
             
-           if (!connected)
-           {
-               textBoxExpression.Text = "";
-               textBoxSendTo.Text = "";
+            if (!connected)
+            {
+                textBoxExpression.Text = "";
+                textBoxSendTo.Text = "";
 
-               TFSNameLabel.Text = "(not connected)";
-               subscriptionslistView.Items.Clear();
-               return;
-           }
-           TFSNameLabel.Text = Shared.Server.Name;
-           userTextBox.Text = 
-                Shared.Server.AuthenticatedUserIdentity.Domain + @"\" +
-                Shared.Server.AuthenticatedUserIdentity.AccountName;
+                TFSNameLabel.Text = "(not connected)";
+                subscriptionslistView.Items.Clear();
+                return;
+            }
+
+            TFSNameLabel.Text = Shared.Collection.Name;
+            userTextBox.Text = Shared.UserDomain + @"\" + Shared.UserName;
         }
 
 
@@ -66,7 +68,7 @@ namespace SubscriptionManager
                 return;
             }
 
-            foreach (Subscription s in Shared.EventService.EventSubscriptions(userTextBox.Text))
+            foreach (Subscription s in Shared.EventService.GetEventSubscriptions(userTextBox.Text))
             {
                 ListViewItem item = new ListViewItem(s.ID.ToString());
                 item.SubItems.Add(s.EventType);
@@ -124,7 +126,7 @@ namespace SubscriptionManager
                 return;
             }
 
-            if (Shared.Server == null )
+            if (Shared.Collection == null )
             {
                 MainForm.DisplayException("No Team Foundation Server Selected");
                 return;
@@ -198,23 +200,25 @@ namespace SubscriptionManager
         }
 
         /// <summary>
-        /// Presents the DomainProjectPicker just as in Team Explorer to select the TFS Server and prompts for
+        /// Presents the TeamProjectPicker just as in Team Explorer to select the TFS Server and prompts for
         /// login information if needed.
         /// </summary>
         protected void ChooseAppServer()
         {
-            DomainProjectPicker dpp = new DomainProjectPicker(DomainProjectPickerMode.None);
-            if (dpp.ShowDialog() == DialogResult.OK)
+            TeamProjectPicker tpp = new TeamProjectPicker();
+            if (tpp.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
                     Cursor.Current = Cursors.WaitCursor;
-                    TeamFoundationServer tfs = new TeamFoundationServer(dpp.SelectedServer.Name, new UICredentialsProvider());
+                    TfsTeamProjectCollection tfs = tpp.SelectedTeamProjectCollection;
                     tfs.Authenticate();
 
-                    Shared.Server = tfs;
-                    Shared.UserDomain = tfs.AuthenticatedUserIdentity.Domain;
-                    Shared.UserName = tfs.AuthenticatedUserIdentity.AccountName;
+                    Shared.Collection = tfs;
+
+                    NetworkCredential user = (NetworkCredential)tfs.Credentials;
+                    Shared.UserDomain = user.UserName;
+                    Shared.UserName = user.Domain;
                 }
                 catch (Exception ex)
                 {
