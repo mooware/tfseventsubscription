@@ -24,37 +24,46 @@ namespace SubscriptionManager
 
         public MainForm()
         {            
-            // set default system font
-            this.Font = SystemInformation.MenuFont;
-
             InitializeComponent();
+            CustomInit();
+
             this.Show();
             Application.DoEvents();
 
             connectButton_Click(this, null);
         }
 
+        void CustomInit()
+        {
+            // set default system font
+            this.Font = SystemInformation.MenuFont;
+
+            comboBoxFormat.Items.AddRange(Enum.GetNames(typeof(DeliveryType)));
+            comboBoxFormat.SelectedItem = DeliveryType.EmailPlaintext.ToString();
+
+            comboBoxSchedule.Items.AddRange(Enum.GetNames(typeof(DeliverySchedule)));
+            comboBoxSchedule.SelectedItem = DeliverySchedule.Immediate.ToString();
+        }
+
         void DisplayServerInfo()
         {
             Boolean connected = (Shared.Collection != null);
             subscribeButton.Enabled = connected;
-            unsubscribeButton.Enabled = connected;
             refreshButton.Enabled = connected;
-            
+
             if (!connected)
             {
                 textBoxExpression.Text = "";
                 textBoxSendTo.Text = "";
 
-                TFSNameLabel.Text = "(not connected)";
+                tfsCollectionTextBox.Text = "(not connected)";
                 subscriptionslistView.Items.Clear();
                 return;
             }
 
-            TFSNameLabel.Text = Shared.Collection.Name;
+            tfsCollectionTextBox.Text = Shared.Collection.Name;
             userTextBox.Text = Shared.UserName;
         }
-
 
         private void ShowSubscriptions()
         {
@@ -71,10 +80,17 @@ namespace SubscriptionManager
             foreach (Subscription s in Shared.EventService.GetEventSubscriptions(userTextBox.Text))
             {
                 ListViewItem item = new ListViewItem(s.ID.ToString());
+
+                // store subscription with the item to use it later
+                item.Tag = s;
+
+                item.SubItems.Add(s.Tag);
                 item.SubItems.Add(s.EventType);
                 item.SubItems.Add(s.ConditionString);
                 item.SubItems.Add(s.DeliveryPreference.Type.ToString());
+                item.SubItems.Add(s.DeliveryPreference.Schedule.ToString());
                 item.SubItems.Add(s.DeliveryPreference.Address);
+
                 subscriptionslistView.Items.Add(item);
             }
             Cursor.Current = Cursors.Default;
@@ -111,7 +127,6 @@ namespace SubscriptionManager
             ShowSubscriptions();
         }
 
-
         private void SubscribeButton_Click(object sender, EventArgs e)
         {
             if (textBoxSendTo.Text.Trim().Length == 0)
@@ -126,35 +141,40 @@ namespace SubscriptionManager
                 return;
             }
 
-            if (Shared.Collection == null )
+            if (Shared.Collection == null)
             {
-                MainForm.DisplayException("No Team Foundation Server Selected");
+                MainForm.DisplayException("No Team Foundation Server selected");
+                return;
+            }
+
+            if (comboBoxEventType.SelectedItem == null)
+            {
+              MessageBox.Show("No Event selected");
+              return;
+            }
+
+            if (comboBoxFormat.SelectedItem == null)
+            {
+                MessageBox.Show("No Format selected");
+                return;
+            }
+
+            if (comboBoxSchedule.SelectedItem == null)
+            {
+                MessageBox.Show("No Schedule selected");
                 return;
             }
 
             DeliveryPreference preference = new DeliveryPreference();
-            preference.Schedule = DeliverySchedule.Immediate;
-
-            switch (comboBoxFormat.Text)
-            {
-                case "Soap":
-                    preference.Type = DeliveryType.Soap;
-                    break;
-                case "PlainText":
-                    preference.Type = DeliveryType.EmailPlaintext;
-                    break;
-                default:
-                    preference.Type = DeliveryType.EmailHtml;
-                    break;
-            }
-
+            preference.Type = (DeliveryType) Enum.Parse(typeof(DeliveryType), comboBoxFormat.Text);
+            preference.Schedule = (DeliverySchedule) Enum.Parse(typeof(DeliverySchedule), comboBoxSchedule.Text);
             preference.Address = textBoxSendTo.Text;
-
-            string userName = Environment.UserDomainName + @"\" + Environment.UserName;
 
             try
             {
-                int id = Shared.EventService.SubscribeEvent(userName, eventComboBox.SelectedItem.ToString(), textBoxExpression.Text, preference);
+                int id = Shared.EventService.SubscribeEvent(Shared.UserName,
+                    comboBoxEventType.Text, textBoxExpression.Text,
+                    preference, textBoxName.Text);
             }
             catch (Exception ex)
             {
@@ -182,14 +202,22 @@ namespace SubscriptionManager
 
         private void subscriptionslistView_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (subscriptionslistView.SelectedItems.Count == 0)
+            bool anySelection = (subscriptionslistView.SelectedItems.Count != 0);
+
+            unsubscribeButton.Enabled = anySelection;
+            if (!anySelection)
             {
                 return;
             }
-            textBoxExpression.Text = subscriptionslistView.SelectedItems[0].SubItems[2].Text;
-            textBoxSendTo.Text = subscriptionslistView.SelectedItems[0].SubItems[4].Text;
-            comboBoxFormat.SelectedItem = subscriptionslistView.SelectedItems[0].SubItems[3].Text;
-            eventComboBox.SelectedItem = subscriptionslistView.SelectedItems[0].SubItems[1].Text;
+
+            Subscription subscription = (Subscription) subscriptionslistView.SelectedItems[0].Tag;
+
+            textBoxName.Text = subscription.Tag;
+            textBoxExpression.Text = subscription.ConditionString;
+            textBoxSendTo.Text = subscription.DeliveryPreference.Address;
+            comboBoxEventType.SelectedItem = subscription.EventType.ToString();
+            comboBoxFormat.SelectedItem = subscription.DeliveryPreference.Type.ToString();
+            comboBoxSchedule.SelectedItem = subscription.DeliveryPreference.Schedule.ToString();
         }
 
 
