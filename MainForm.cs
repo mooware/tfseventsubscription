@@ -52,7 +52,7 @@ namespace SubscriptionManager
             }
 
             TFSNameLabel.Text = Shared.Collection.Name;
-            userTextBox.Text = Shared.UserDomain + @"\" + Shared.UserName;
+            userTextBox.Text = Shared.UserName;
         }
 
 
@@ -211,14 +211,12 @@ namespace SubscriptionManager
                 try
                 {
                     Cursor.Current = Cursors.WaitCursor;
+
                     TfsTeamProjectCollection tfs = tpp.SelectedTeamProjectCollection;
                     tfs.Authenticate();
 
                     Shared.Collection = tfs;
-
-                    NetworkCredential user = (NetworkCredential)tfs.Credentials;
-                    Shared.UserDomain = user.UserName;
-                    Shared.UserName = user.Domain;
+                    Shared.UserName = IdentityHelper.GetDomainUserName(tfs.AuthorizedIdentity);
                 }
                 catch (Exception ex)
                 {

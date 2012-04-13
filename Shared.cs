@@ -26,7 +26,6 @@ namespace WorkitemEventSubscriptionTool
         static public TfsTeamProjectCollection Collection = null;
         static public ICommonStructureService CSSProxy = null;
         static public IEventService EventService = null;
-        static public string UserDomain;
         static public string UserName;
 
         // nasty Q&D hack for passing data between forms 
