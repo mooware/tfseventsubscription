@@ -17,8 +17,5 @@
     <Setting Name="WindowMaximized" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="ColumnWidthsMaximized" Type="System.Collections.ArrayList" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
   </Settings>
 </SettingsFile>

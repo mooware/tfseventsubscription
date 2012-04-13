@@ -80,16 +80,5 @@ namespace EventSubscriptionTool.Properties {
                 this["WindowMaximized"] = value;
             }
         }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        public global::System.Collections.ArrayList ColumnWidthsMaximized {
-            get {
-                return ((global::System.Collections.ArrayList)(this["ColumnWidthsMaximized"]));
-            }
-            set {
-                this["ColumnWidthsMaximized"] = value;
-            }
-        }
     }
 }

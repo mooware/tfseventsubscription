@@ -141,8 +141,8 @@ namespace EventSubscriptionTool
             this.subscriptionslistView.ContextMenuStrip = this.contextMenuSubscription;
             this.subscriptionslistView.FullRowSelect = true;
             this.subscriptionslistView.GridLines = true;
+            this.subscriptionslistView.HideSelection = false;
             this.subscriptionslistView.Location = new System.Drawing.Point(8, 55);
-            this.subscriptionslistView.MultiSelect = false;
             this.subscriptionslistView.Name = "subscriptionslistView";
             this.subscriptionslistView.Size = new System.Drawing.Size(721, 167);
             this.subscriptionslistView.TabIndex = 6;

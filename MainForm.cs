@@ -1,27 +1,19 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
-using EventSubscriptionTool;
-using System.Diagnostics;
-
-using System.Net;
-
-using Microsoft.TeamFoundation.Proxy;
-using Microsoft.TeamFoundation.Server;
-using Microsoft.TeamFoundation.Client;
-using Microsoft.TeamFoundation;
-using Microsoft.TeamFoundation.Framework.Client;
 using System.Collections;
+using System.Diagnostics;
+using System.Windows.Forms;
+
+using Microsoft.TeamFoundation.Client;
+using Microsoft.TeamFoundation.Framework.Client;
 
 namespace EventSubscriptionTool
 {
     public partial class MainForm : Form
     {
         private int sortColumn = -1;
+        private TfsTeamProjectCollection tfsCollection = null;
+        private IEventService eventService = null;
+        private string userName;
 
         public MainForm()
         {            
@@ -79,7 +71,6 @@ namespace EventSubscriptionTool
 
             cfg.Initialized = true;
 
-            // TODO: store maximized state
             cfg.WindowMaximized = (this.WindowState == FormWindowState.Maximized);
 
             if (this.WindowState == FormWindowState.Normal)
@@ -104,7 +95,7 @@ namespace EventSubscriptionTool
 
         private void DisplayServerInfo()
         {
-            Boolean connected = (Shared.Collection != null);
+            Boolean connected = (tfsCollection != null);
             subscribeButton.Enabled = connected;
             refreshButton.Enabled = connected;
 
@@ -118,8 +109,8 @@ namespace EventSubscriptionTool
                 return;
             }
 
-            tfsCollectionTextBox.Text = Shared.Collection.Name;
-            userTextBox.Text = Shared.UserName;
+            tfsCollectionTextBox.Text = tfsCollection.Name;
+            userTextBox.Text = userName;
         }
 
         private void ShowSubscriptions()
@@ -127,35 +118,27 @@ namespace EventSubscriptionTool
             Cursor.Current = Cursors.WaitCursor;
             subscriptionslistView.Items.Clear();
 
-            Shared.ConnectServer();
-
-            if (Shared.EventService == null)
+            if (eventService != null)
             {
-                return;
+                foreach (Subscription s in eventService.GetEventSubscriptions(userTextBox.Text))
+                {
+                    ListViewItem item = new ListViewItem(s.ID.ToString());
+
+                    // store subscription with the item to use it later
+                    item.Tag = s;
+
+                    item.SubItems.Add(s.Tag);
+                    item.SubItems.Add(s.EventType);
+                    item.SubItems.Add(s.ConditionString);
+                    item.SubItems.Add(s.DeliveryPreference.Type.ToString());
+                    item.SubItems.Add(s.DeliveryPreference.Schedule.ToString());
+                    item.SubItems.Add(s.DeliveryPreference.Address);
+
+                    subscriptionslistView.Items.Add(item);
+                }
             }
 
-            foreach (Subscription s in Shared.EventService.GetEventSubscriptions(userTextBox.Text))
-            {
-                ListViewItem item = new ListViewItem(s.ID.ToString());
-
-                // store subscription with the item to use it later
-                item.Tag = s;
-
-                item.SubItems.Add(s.Tag);
-                item.SubItems.Add(s.EventType);
-                item.SubItems.Add(s.ConditionString);
-                item.SubItems.Add(s.DeliveryPreference.Type.ToString());
-                item.SubItems.Add(s.DeliveryPreference.Schedule.ToString());
-                item.SubItems.Add(s.DeliveryPreference.Address);
-
-                subscriptionslistView.Items.Add(item);
-            }
             Cursor.Current = Cursors.Default;
-        }
-
-        private void closeButton_Click(object sender, EventArgs e)
-        {
-            this.Close();
         }
 
         private void refreshButton_Click(object sender, EventArgs e)
@@ -178,7 +161,7 @@ namespace EventSubscriptionTool
 
             foreach (ListViewItem item in subscriptionslistView.SelectedItems)
             {
-                Shared.EventService.UnsubscribeEvent(Int32.Parse(item.Text));
+                eventService.UnsubscribeEvent(Int32.Parse(item.Text));
             }
 
             ShowSubscriptions();
@@ -198,7 +181,7 @@ namespace EventSubscriptionTool
                 return;
             }
 
-            if (Shared.Collection == null)
+            if (tfsCollection == null)
             {
                 MainForm.DisplayException("No Team Foundation Server selected");
                 return;
@@ -229,9 +212,11 @@ namespace EventSubscriptionTool
 
             try
             {
-                int id = Shared.EventService.SubscribeEvent(Shared.UserName,
-                    comboBoxEventType.Text, textBoxExpression.Text,
-                    preference, textBoxName.Text);
+                string eventType = comboBoxEventType.Text;
+                string filter = textBoxExpression.Text;
+                string name = textBoxName.Text;
+
+                eventService.SubscribeEvent(userName, eventType, filter, preference, name);
             }
             catch (Exception ex)
             {
@@ -251,9 +236,9 @@ namespace EventSubscriptionTool
         {
             XPathBuilderForm f = new XPathBuilderForm();
             f.ShowDialog();
-            if (!String.IsNullOrEmpty(Shared.FormSharedData))
+            if (!String.IsNullOrEmpty(f.QueryString))
             {
-                textBoxExpression.Text = Shared.FormSharedData;
+                textBoxExpression.Text = f.QueryString;
             }
         }
 
@@ -262,10 +247,9 @@ namespace EventSubscriptionTool
             bool anySelection = (subscriptionslistView.SelectedItems.Count != 0);
 
             unsubscribeButton.Enabled = anySelection;
+
             if (!anySelection)
-            {
                 return;
-            }
 
             Subscription subscription = (Subscription) subscriptionslistView.SelectedItems[0].Tag;
 
@@ -277,7 +261,6 @@ namespace EventSubscriptionTool
             comboBoxSchedule.SelectedItem = subscription.DeliveryPreference.Schedule.ToString();
         }
 
-
         private void MainForm_Load(object sender, EventArgs e)
         {
             LoadUserSettings();
@@ -287,7 +270,7 @@ namespace EventSubscriptionTool
         /// Presents the TeamProjectPicker just as in Team Explorer to select the TFS Server and prompts for
         /// login information if needed.
         /// </summary>
-        protected void ChooseAppServer()
+        protected void ConnectToServer()
         {
             TeamProjectPicker tpp = new TeamProjectPicker();
             if (tpp.ShowDialog() == DialogResult.OK)
@@ -299,8 +282,9 @@ namespace EventSubscriptionTool
                     TfsTeamProjectCollection tfs = tpp.SelectedTeamProjectCollection;
                     tfs.Authenticate();
 
-                    Shared.Collection = tfs;
-                    Shared.UserName = IdentityHelper.GetDomainUserName(tfs.AuthorizedIdentity);
+                    eventService = (IEventService) tfs.GetService(typeof(IEventService));
+                    userName = IdentityHelper.GetDomainUserName(tfs.AuthorizedIdentity);
+                    tfsCollection = tfs;
                 }
                 catch (Exception ex)
                 {
@@ -311,12 +295,13 @@ namespace EventSubscriptionTool
                     Cursor.Current = Cursors.Default;
                 }
             }
+
             DisplayServerInfo();
         }
 
         private void connectButton_Click(object sender, EventArgs e)
         {
-            ChooseAppServer();
+            ConnectToServer();
             ShowSubscriptions();
         }
 

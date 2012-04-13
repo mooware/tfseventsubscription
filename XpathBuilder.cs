@@ -1,25 +1,19 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using EventSubscriptionTool;
 
 // TFS dependencies
-using Microsoft.TeamFoundation.Proxy;
-using Microsoft.TeamFoundation.Server;
-using Microsoft.TeamFoundation.Client;
 
 namespace EventSubscriptionTool
 {
     public partial class XPathBuilderForm : Form
     {
+        public string QueryString { get; set; }
+
         public XPathBuilderForm()
         {
 
-            Shared.FormSharedData = "";
+            QueryString = "";
 
             this.Font = SystemInformation.MenuFont;
             InitializeComponent();
@@ -378,7 +372,7 @@ namespace EventSubscriptionTool
 
         private void UseExpressionButton_Click(object sender, EventArgs e)
         {
-            Shared.FormSharedData = textBoxExpression.Text;
+            QueryString = textBoxExpression.Text;
             this.Close();
         }
     
