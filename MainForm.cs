@@ -5,6 +5,7 @@ using System.Windows.Forms;
 
 using Microsoft.TeamFoundation.Client;
 using Microsoft.TeamFoundation.Framework.Client;
+using Microsoft.TeamFoundation.Server;
 
 namespace EventSubscriptionTool
 {
@@ -36,8 +37,6 @@ namespace EventSubscriptionTool
 
             comboBoxSchedule.Items.AddRange(Enum.GetNames(typeof(DeliverySchedule)));
             comboBoxSchedule.SelectedItem = DeliverySchedule.Immediate.ToString();
-
-            comboBoxEventType.SelectedItem = "CheckinEvent";
         }
 
         private void LoadUserSettings()
@@ -285,6 +284,8 @@ namespace EventSubscriptionTool
                     eventService = (IEventService) tfs.GetService(typeof(IEventService));
                     userName = IdentityHelper.GetDomainUserName(tfs.AuthorizedIdentity);
                     tfsCollection = tfs;
+
+                    LoadEventTypes();
                 }
                 catch (Exception ex)
                 {
@@ -297,6 +298,25 @@ namespace EventSubscriptionTool
             }
 
             DisplayServerInfo();
+        }
+
+        private void LoadEventTypes()
+        {
+            comboBoxEventType.Items.Clear();
+
+            IRegistration reg = (IRegistration)tfsCollection.GetService(typeof(IRegistration));
+            RegistrationEntry[] entries = reg.GetRegistrationEntries("");
+
+            foreach (RegistrationEntry entry in entries)
+            {
+                foreach (EventType type in entry.EventTypes)
+                {
+                    comboBoxEventType.Items.Add(type.Name);
+                }
+            }
+
+            // set default selection
+            comboBoxEventType.SelectedItem = "CheckinEvent";
         }
 
         private void connectButton_Click(object sender, EventArgs e)

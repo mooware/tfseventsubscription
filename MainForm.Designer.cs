@@ -282,21 +282,6 @@ namespace EventSubscriptionTool
             this.comboBoxEventType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.comboBoxEventType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxEventType.FormattingEnabled = true;
-            this.comboBoxEventType.Items.AddRange(new object[] {
-            "BranchMovedEvent",
-            "BuildCompletionEvent",
-            "BuildStatusChangedEvent",
-            "CheckinEvent",
-            "CommonStructureChangedEvent",
-            "DataChangedEvent",
-            "IdentityChangedEvent",
-            "NodeCreatedEvent",
-            "NodePropertiesChangedEvent",
-            "NodeRenamedEvent",
-            "NodesDeletedEvent",
-            "ProjectCreatedEvent",
-            "ProjectDeletedEvent",
-            "WorkItemChangedEvent"});
             this.comboBoxEventType.Location = new System.Drawing.Point(291, 210);
             this.comboBoxEventType.Name = "comboBoxEventType";
             this.comboBoxEventType.Size = new System.Drawing.Size(199, 21);
