@@ -5,14 +5,14 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using WorkitemEventSubscriptionTool;
+using EventSubscriptionTool;
 
 // TFS dependencies
 using Microsoft.TeamFoundation.Proxy;
 using Microsoft.TeamFoundation.Server;
 using Microsoft.TeamFoundation.Client;
 
-namespace SubscriptionManager
+namespace EventSubscriptionTool
 {
     public partial class XPathBuilderForm : Form
     {

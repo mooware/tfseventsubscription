@@ -1,4 +1,4 @@
-namespace SubscriptionManager
+namespace EventSubscriptionTool
 {
     partial class XPathBuilderForm
     {

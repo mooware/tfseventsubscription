@@ -5,7 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using WorkitemEventSubscriptionTool;
+using EventSubscriptionTool;
 using System.Diagnostics;
 
 using System.Net;
@@ -15,8 +15,9 @@ using Microsoft.TeamFoundation.Server;
 using Microsoft.TeamFoundation.Client;
 using Microsoft.TeamFoundation;
 using Microsoft.TeamFoundation.Framework.Client;
+using System.Collections;
 
-namespace SubscriptionManager
+namespace EventSubscriptionTool
 {
     public partial class MainForm : Form
     {
@@ -33,7 +34,7 @@ namespace SubscriptionManager
             connectButton_Click(this, null);
         }
 
-        void CustomInit()
+        private void CustomInit()
         {
             // set default system font
             this.Font = SystemInformation.MenuFont;
@@ -43,9 +44,65 @@ namespace SubscriptionManager
 
             comboBoxSchedule.Items.AddRange(Enum.GetNames(typeof(DeliverySchedule)));
             comboBoxSchedule.SelectedItem = DeliverySchedule.Immediate.ToString();
+
+            comboBoxEventType.SelectedItem = "CheckinEvent";
         }
 
-        void DisplayServerInfo()
+        private void LoadUserSettings()
+        {
+            EventSubscriptionTool.Properties.Settings cfg = EventSubscriptionTool.Properties.Settings.Default;
+
+            // has the config file been created before?
+            if (! cfg.Initialized)
+                return;
+
+            this.Size = cfg.WindowSize;
+
+            foreach (ColumnHeader col in subscriptionslistView.Columns)
+            {
+                int i = col.Index;
+
+                if (i < cfg.ColumnWidths.Count)
+                    col.Width = (int) cfg.ColumnWidths[i];
+
+                if (i < cfg.ColumnDisplayIndices.Count)
+                    col.DisplayIndex = (int) cfg.ColumnDisplayIndices[i];
+            }
+
+            if (cfg.WindowMaximized)
+                this.WindowState = FormWindowState.Maximized;
+        }
+
+        private void SaveUserSettings()
+        {
+            EventSubscriptionTool.Properties.Settings cfg = EventSubscriptionTool.Properties.Settings.Default;
+
+            cfg.Initialized = true;
+
+            // TODO: store maximized state
+            cfg.WindowMaximized = (this.WindowState == FormWindowState.Maximized);
+
+            if (this.WindowState == FormWindowState.Normal)
+            {
+                cfg.WindowSize = this.Size;
+            }
+
+            ArrayList colWidths = new ArrayList();
+            ArrayList colDisplayIndices = new ArrayList();
+
+            foreach (ColumnHeader col in this.subscriptionslistView.Columns)
+            {
+                colWidths.Add(col.Width);
+                colDisplayIndices.Add(col.DisplayIndex);
+            }
+
+            cfg.ColumnWidths = colWidths;
+            cfg.ColumnDisplayIndices = colDisplayIndices;
+
+            cfg.Save();
+        }
+
+        private void DisplayServerInfo()
         {
             Boolean connected = (Shared.Collection != null);
             subscribeButton.Enabled = connected;
@@ -223,8 +280,7 @@ namespace SubscriptionManager
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            // necessary hack due to bug in WinForms splitter control
-            splitContainer1.Panel2MinSize = 310;
+            LoadUserSettings();
         }
 
         /// <summary>
@@ -305,6 +361,11 @@ namespace SubscriptionManager
         private void unsubscribeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Unsubscribe();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            SaveUserSettings();
         }
 
     }

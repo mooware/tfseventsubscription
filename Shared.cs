@@ -6,7 +6,7 @@ using Microsoft.TeamFoundation.Framework.Client;
 using Microsoft.TeamFoundation.Server;
 using Microsoft.TeamFoundation.Client;
 
-namespace WorkitemEventSubscriptionTool
+namespace EventSubscriptionTool
 {
     public class TFSInstanceChangedArgs : EventArgs
     {
