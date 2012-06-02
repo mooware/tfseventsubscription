@@ -19,7 +19,7 @@ I couldn't find much documentation on the filter expressions for subscriptions. 
 Alternatives
 ------------
 
-  * **BisSubscribe** is a command line tool to add and remove subscriptions, but it is only avaiable on the TFS server, not on clients.
+  * **BisSubscribe** is a command line tool to add and remove subscriptions, but it is only available on the TFS server, not on clients.
   * [TFS Power Tools](http://visualstudiogallery.msdn.microsoft.com/c255a1e4-04ba-4f68-8f4e-cd473d6b971f) includes the **Alerts Explorer** VS2010 extension. It provides an editor to build filter expressions, but this editor is rather restricted and does not allow to directly specify the filter expression.
 
 History
