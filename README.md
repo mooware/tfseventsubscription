@@ -5,6 +5,8 @@ This tool provides a GUI to add and remove event subscriptions for your account 
 
 .NET 3.5 is necessary to run the tool. Also, you probably need some TFS DLLs, but if you can use TFS in Visual Studio 2010 then they should already be there.
 
+Download from http://dl.dropbox.com/u/267889/github/EventSubscriptionTool.exe.
+
 Usage
 -----
 
